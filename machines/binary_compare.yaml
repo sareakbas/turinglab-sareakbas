@@ -1,0 +1,42 @@
+name: "binary_compare"
+description: "İki binary sayıyı karşılaştırır. Sol > Sağ ise kabul eder. (Eşit uzunluk varsayımıyla)"
+states: [q_start, q_scan_right_0, q_find_unmarked_right_0, q_scan_right_1, q_find_unmarked_right_1, q_return, q_accept, q_reject]
+input_alphabet: ["0", "1", "#"]
+tape_alphabet: ["0", "1", "#", "X", "Y", "B"]
+blank: "B"
+start_state: q_start
+accept_states: [q_accept]
+reject_states: [q_reject]
+transitions:
+  # q_start: Soldaki sayının ilk işlenmemiş bitini bul ve X yap
+  - {state: q_start, read: "X", next: q_start, write: "X", move: R}
+  - {state: q_start, read: "0", next: q_scan_right_0, write: "X", move: R}
+  - {state: q_start, read: "1", next: q_scan_right_1, write: "X", move: R}
+  - {state: q_start, read: "#", next: q_reject, write: "#", move: R} # Tüm bitler eşitse REDDET (büyük değil)
+
+  # q_scan_right_0: Soldaki bit 0'dı. '#' işaretini bulana kadar sağa git.
+  - {state: q_scan_right_0, read: "0", next: q_scan_right_0, write: "0", move: R}
+  - {state: q_scan_right_0, read: "1", next: q_scan_right_0, write: "1", move: R}
+  - {state: q_scan_right_0, read: "#", next: q_find_unmarked_right_0, write: "#", move: R}
+
+  # q_find_unmarked_right_0: Sağdaki sayının işlenmemiş ilk bitini bul.
+  - {state: q_find_unmarked_right_0, read: "Y", next: q_find_unmarked_right_0, write: "Y", move: R}
+  - {state: q_find_unmarked_right_0, read: "0", next: q_return, write: "Y", move: L}  # İkisi de 0, berabere, geri dön
+  - {state: q_find_unmarked_right_0, read: "1", next: q_reject, write: "Y", move: R}  # Sol 0, Sağ 1 -> Sol daha küçük! REDDET!
+
+  # q_scan_right_1: Soldaki bit 1'di. '#' işaretini bulana kadar sağa git.
+  - {state: q_scan_right_1, read: "0", next: q_scan_right_1, write: "0", move: R}
+  - {state: q_scan_right_1, read: "1", next: q_scan_right_1, write: "1", move: R}
+  - {state: q_scan_right_1, read: "#", next: q_find_unmarked_right_1, write: "#", move: R}
+
+  # q_find_unmarked_right_1: Sağdaki sayının işlenmemiş ilk bitini bul.
+  - {state: q_find_unmarked_right_1, read: "Y", next: q_find_unmarked_right_1, write: "Y", move: R}
+  - {state: q_find_unmarked_right_1, read: "1", next: q_return, write: "Y", move: L}  # İkisi de 1, berabere, geri dön
+  - {state: q_find_unmarked_right_1, read: "0", next: q_accept, write: "Y", move: R}  # Sol 1, Sağ 0 -> Sol daha büyük! KABUL!
+
+  # q_return: Beraberlik durumunda en sola (ilk X'e) geri dön.
+  - {state: q_return, read: "0", next: q_return, write: "0", move: L}
+  - {state: q_return, read: "1", next: q_return, write: "1", move: L}
+  - {state: q_return, read: "#", next: q_return, write: "#", move: L}
+  - {state: q_return, read: "Y", next: q_return, write: "Y", move: L}
+  - {state: q_return, read: "X", next: q_start, write: "X", move: R} # Son X'i bulduk, bir sağa kay ve baştan başla

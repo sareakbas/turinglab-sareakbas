@@ -1,0 +1,39 @@
+name: "unary_to_binary"
+description: "Tekli (unary) sayı sistemindeki 1'leri sayarak ikili (binary) sisteme çevirir."
+states: [q0, q_inc_rightmost, q_carry, q_skip_binary, q_skip_X, q_erase_X, q_accept]
+input_alphabet: ["1"]
+tape_alphabet: ["0", "1", "X", "B"]
+blank: "B"
+start_state: q0
+accept_states: [q_accept]
+reject_states: []
+transitions:
+  # q0: Başlangıç. İlk unary 1'i okur, X yapar, sola gidip sayacı başlatır. Eğer boşsa 0 yazar.
+  - {state: q0, read: "1", next: q_inc_rightmost, write: "X", move: L}
+  - {state: q0, read: "B", next: q_accept, write: "0", move: R}
+  
+  # q_inc_rightmost: Sola doğru X'leri geçer, binary sayının en sağındaki biti bulur ve 1 artırır.
+  - {state: q_inc_rightmost, read: "X", next: q_inc_rightmost, write: "X", move: L}
+  - {state: q_inc_rightmost, read: "0", next: q_skip_binary, write: "1", move: R}
+  - {state: q_inc_rightmost, read: "1", next: q_carry, write: "0", move: L}
+  - {state: q_inc_rightmost, read: "B", next: q_skip_binary, write: "1", move: R}
+  
+  # q_carry: Elde (carry) 1 varsa sola doğru ilerleyerek ekler.
+  - {state: q_carry, read: "1", next: q_carry, write: "0", move: L}
+  - {state: q_carry, read: "0", next: q_skip_binary, write: "1", move: R}
+  - {state: q_carry, read: "B", next: q_skip_binary, write: "1", move: R}
+  
+  # q_skip_binary: Artırma bitince sağa döner, binary sayıların üzerinden atlar.
+  - {state: q_skip_binary, read: "0", next: q_skip_binary, write: "0", move: R}
+  - {state: q_skip_binary, read: "1", next: q_skip_binary, write: "1", move: R}
+  - {state: q_skip_binary, read: "X", next: q_skip_X, write: "X", move: R}
+  
+  # q_skip_X: X'lerin üzerinden atlar, ilk işlenmemiş unary 1'i arar.
+  - {state: q_skip_X, read: "X", next: q_skip_X, write: "X", move: R}
+  - {state: q_skip_X, read: "1", next: q_inc_rightmost, write: "X", move: L}
+  - {state: q_skip_X, read: "B", next: q_erase_X, write: "B", move: L} # 1 kalmadıysa temizliğe geç
+  
+  # q_erase_X: Tüm unary 1'ler bitince kalan X'leri silerek sadece binary sayıyı bırakır.
+  - {state: q_erase_X, read: "X", next: q_erase_X, write: "B", move: L}
+  - {state: q_erase_X, read: "0", next: q_accept, write: "0", move: R}
+  - {state: q_erase_X, read: "1", next: q_accept, write: "1", move: R}
