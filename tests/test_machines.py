@@ -60,3 +60,40 @@ def test_tm2_ret_sag_daha_buyuk(tm_binary_compare):
 # 5. Kenar Durum: Eşitlik (3 == 3) -> Büyük olmadığı için reddetmeli
 def test_tm2_kenar_durum_esit(tm_binary_compare):
     assert tm_binary_compare.run("11#11").accepted is False
+
+
+
+# TM-3: DİZGİ KOPYALAYICI 
+@pytest.fixture
+def tm_string_copy():
+    return SingleTapeTM.from_yaml("machines/string_copy.yaml")
+
+# 1. Kabul Testi: Uzun Kelime
+def test_tm3_kabul_uzun(tm_string_copy):
+    result = tm_string_copy.run("abba")
+    assert result.accepted is True
+    temiz_serit = result.final_tape.replace("[", "").replace("]", "")
+    assert "abba#abba" in temiz_serit
+
+# 2. Kabul Testi: Kısa Kelime
+def test_tm3_kabul_kisa(tm_string_copy):
+    result = tm_string_copy.run("ab")
+    assert result.accepted is True
+    temiz_serit = result.final_tape.replace("[", "").replace("]", "")
+    assert "ab#ab" in temiz_serit
+
+# 3. Ret Testi: Geçersiz Alfabe (c harfi var)
+def test_tm3_ret_gecersiz_harf(tm_string_copy):
+    result = tm_string_copy.run("abc")
+    assert result.accepted is False
+
+# 4. Ret Testi: İçinde Zaten '#' Olan Girdi
+def test_tm3_ret_icinde_ayirici_var(tm_string_copy):
+    result = tm_string_copy.run("a#b")
+    assert result.accepted is False
+
+# 5. Kenar Durum: Boş Girdi (Sadece '#' bırakmalı)
+def test_tm3_kenar_durum_bos(tm_string_copy):
+    result = tm_string_copy.run("")
+    assert result.accepted is True
+    assert "#" in result.final_tape
