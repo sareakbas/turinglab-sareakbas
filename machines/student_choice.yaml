@@ -1,0 +1,28 @@
+name: "divisible_by_4"
+description: "İkili (binary) bir sayının 4'e tam bölünüp bölünmediğini son iki basamağına (00) bakarak test eder."
+states: [q_start, q_find_end, q_check_last, q_check_second_last, q_accept, q_reject]
+input_alphabet: ["0", "1"]
+tape_alphabet: ["0", "1", "B"]
+blank: "B"
+start_state: q_start
+accept_states: [q_accept]
+reject_states: [q_reject]
+transitions:
+  # q_start: Girdi boş mu diye kontrol et, değilse okumaya başla
+  - {state: q_start, read: "0", next: q_find_end, write: "0", move: R}
+  - {state: q_start, read: "1", next: q_find_end, write: "1", move: R}
+  - {state: q_start, read: "B", next: q_reject, write: "B", move: R} # Boş girdi reddedilir
+
+  # q_find_end: Sayının en sonuna (ilk B'ye) kadar sağa koş
+  - {state: q_find_end, read: "0", next: q_find_end, write: "0", move: R}
+  - {state: q_find_end, read: "1", next: q_find_end, write: "1", move: R}
+  - {state: q_find_end, read: "B", next: q_check_last, write: "B", move: L}
+
+  # q_check_last: Son basamak kesinlikle 0 olmalı
+  - {state: q_check_last, read: "0", next: q_check_second_last, write: "0", move: L}
+  - {state: q_check_last, read: "1", next: q_reject, write: "1", move: L}
+
+  # q_check_second_last: Sondan ikinci basamak kesinlikle 0 olmalı (veya sadece 0 girildiyse B olmalı)
+  - {state: q_check_second_last, read: "0", next: q_accept, write: "0", move: L}
+  - {state: q_check_second_last, read: "1", next: q_reject, write: "1", move: L}
+  - {state: q_check_second_last, read: "B", next: q_accept, write: "B", move: R} # Sadece '0' sayısına izin ver

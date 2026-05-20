@@ -97,3 +97,34 @@ def test_tm3_kenar_durum_bos(tm_string_copy):
     result = tm_string_copy.run("")
     assert result.accepted is True
     assert "#" in result.final_tape
+
+
+# TM-4: 4'E BÖLÜNEBİLİRLİK 
+
+@pytest.fixture
+def tm_divisible_by_4():
+    return SingleTapeTM.from_yaml("machines/student_choice.yaml")
+
+# 1. Kabul Testi: 12 (1100) -> Sonu 00 biter
+def test_tm4_kabul_12(tm_divisible_by_4):
+    assert tm_divisible_by_4.run("1100").accepted is True
+
+# 2. Kabul Testi: 16 (10000) -> Sonu 00 biter
+def test_tm4_kabul_16(tm_divisible_by_4):
+    assert tm_divisible_by_4.run("10000").accepted is True
+
+# 3. Ret Testi: 10 (1010) -> Sonu 10 biter
+def test_tm4_ret_10(tm_divisible_by_4):
+    assert tm_divisible_by_4.run("1010").accepted is False
+
+# 4. Ret Testi: 7 (111) -> Sonu 11 biter
+def test_tm4_ret_7(tm_divisible_by_4):
+    assert tm_divisible_by_4.run("111").accepted is False
+
+# 5. Kenar Durum Testi: Sadece 0 sayısı (Matematiksel olarak 4'e tam bölünür)
+def test_tm4_kenar_durum_sifir(tm_divisible_by_4):
+    assert tm_divisible_by_4.run("0").accepted is True
+
+# 6. Ekstra Kenar Durum: Boş Girdi (Reddedilmeli)
+def test_tm4_kenar_durum_bos(tm_divisible_by_4):
+    assert tm_divisible_by_4.run("").accepted is False
