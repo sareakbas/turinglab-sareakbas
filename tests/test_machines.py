@@ -1,5 +1,8 @@
 import pytest
 from turinglab.tm_engine import SingleTapeTM
+from turinglab.multi_tape import MultiTapeTM 
+from turinglab.ntm import NonDeterministicTM
+
 
 @pytest.fixture
 def tm_unary_to_binary():
@@ -121,10 +124,86 @@ def test_tm4_ret_10(tm_divisible_by_4):
 def test_tm4_ret_7(tm_divisible_by_4):
     assert tm_divisible_by_4.run("111").accepted is False
 
-# 5. Kenar Durum Testi: Sadece 0 sayısı (Matematiksel olarak 4'e tam bölünür)
+# 5. Kenar Durum Testi: Sadece 0 sayısı
 def test_tm4_kenar_durum_sifir(tm_divisible_by_4):
     assert tm_divisible_by_4.run("0").accepted is True
 
 # 6. Ekstra Kenar Durum: Boş Girdi (Reddedilmeli)
 def test_tm4_kenar_durum_bos(tm_divisible_by_4):
     assert tm_divisible_by_4.run("").accepted is False
+
+
+
+# ==========================================
+# BONUS A: ÇOK ŞERİTLİ (MULTI-TAPE) TOPLAMA
+# ==========================================
+
+@pytest.fixture
+def tm_multi_add():
+    return MultiTapeTM.from_yaml("machines/binary_add_multi.yaml")
+
+# 1. Test: 10 (2) + 11 (3) = 101 (5)
+def test_bonus_a_add_simple(tm_multi_add):
+    result = tm_multi_add.run(["10", "11"])
+    assert result.accepted is True
+    assert "101" in result.final_tapes[2] # 3. Şerit
+
+# 2. Test: 111 (7) + 1 (1) = 1000 (8)
+def test_bonus_a_add_carry(tm_multi_add):
+    result = tm_multi_add.run(["111", "1"])
+    assert result.accepted is True
+    assert "1000" in result.final_tapes[2]
+
+# 3. Test: Uzunluk farkı olan sayılar
+def test_bonus_a_add_diff_len(tm_multi_add):
+    result = tm_multi_add.run(["1000", "1"]) # 8 + 1 = 9
+    assert result.accepted is True
+    assert "1001" in result.final_tapes[2]
+
+# 4. Test: Sıfır ile toplama
+def test_bonus_a_add_zero(tm_multi_add):
+    result = tm_multi_add.run(["101", "0"]) # 5 + 0 = 5
+    assert result.accepted is True
+    assert "101" in result.final_tapes[2]
+
+# 5. Test: Çift elde (Double carry)
+def test_bonus_a_double_carry(tm_multi_add):
+    result = tm_multi_add.run(["11", "11"]) # 3 + 3 = 6
+    assert result.accepted is True
+    assert "110" in result.final_tapes[2]
+
+
+# ==========================================
+# BONUS B: NON-DETERMINISTIC TM (NTM)
+# ==========================================
+
+@pytest.fixture
+def ntm_find_11():
+    return NonDeterministicTM.from_yaml("machines/ntm_find_11.yaml")
+
+# 1. Test: Sonda '11' var
+def test_bonus_b_ntm_sonda(ntm_find_11):
+    result = ntm_find_11.run("01011")
+    assert len(result.accepting_paths) > 0 # Kabul edilen en az 1 paralel evren olmalı
+    assert result.rejected is False
+
+# 2. Test: Başta '11' var
+def test_bonus_b_ntm_basta(ntm_find_11):
+    result = ntm_find_11.run("11000")
+    assert len(result.accepting_paths) > 0
+
+# 3. Test: İçinde hiç '11' yok -> Reddedilmeli
+def test_bonus_b_ntm_yok(ntm_find_11):
+    result = ntm_find_11.run("01010")
+    assert len(result.accepting_paths) == 0
+    assert result.rejected is True
+
+# 4. Test: Çakışan '1'ler (111)
+def test_bonus_b_ntm_cakisan(ntm_find_11):
+    result = ntm_find_11.run("111")
+    assert len(result.accepting_paths) > 0
+
+# 5. Kenar Durum: Boş girdi
+def test_bonus_b_ntm_bos(ntm_find_11):
+    result = ntm_find_11.run("")
+    assert result.rejected is True

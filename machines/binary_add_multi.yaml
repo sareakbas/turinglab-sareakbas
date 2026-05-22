@@ -1,0 +1,48 @@
+name: "binary_add_3tape"
+description: "3 şeritli ikili (binary) sayı toplama makinesi."
+num_tapes: 3
+states: [q_rewind, q_add_0, q_add_1, q_accept]
+input_alphabet: ["0", "1"]
+tape_alphabet: ["0", "1", "B"]
+blank: "B"
+start_state: q_rewind
+accept_states: [q_accept]
+reject_states: []
+transitions:
+  # Aşama 1: İki sayının da en sağına (birler basamağına) gitmek için hızlıca koş
+  - {state: q_rewind, read: ["0", "0", "B"], next: q_rewind, write: ["0", "0", "B"], move: ["R", "R", "S"]}
+  - {state: q_rewind, read: ["0", "1", "B"], next: q_rewind, write: ["0", "1", "B"], move: ["R", "R", "S"]}
+  - {state: q_rewind, read: ["1", "0", "B"], next: q_rewind, write: ["1", "0", "B"], move: ["R", "R", "S"]}
+  - {state: q_rewind, read: ["1", "1", "B"], next: q_rewind, write: ["1", "1", "B"], move: ["R", "R", "S"]}
+  - {state: q_rewind, read: ["0", "B", "B"], next: q_rewind, write: ["0", "B", "B"], move: ["R", "S", "S"]}
+  - {state: q_rewind, read: ["1", "B", "B"], next: q_rewind, write: ["1", "B", "B"], move: ["R", "S", "S"]}
+  - {state: q_rewind, read: ["B", "0", "B"], next: q_rewind, write: ["B", "0", "B"], move: ["S", "R", "S"]}
+  - {state: q_rewind, read: ["B", "1", "B"], next: q_rewind, write: ["B", "1", "B"], move: ["S", "R", "S"]}
+  # İkisi de boşluğa (B) çarpınca bir adım sola dön ve toplamaya başla
+  - {state: q_rewind, read: ["B", "B", "B"], next: q_add_0, write: ["B", "B", "B"], move: ["L", "L", "S"]}
+
+  # Aşama 2: Toplama - ELDE YOK (q_add_0)
+  - {state: q_add_0, read: ["0", "0", "B"], next: q_add_0, write: ["0", "0", "0"], move: ["L", "L", "L"]}
+  - {state: q_add_0, read: ["0", "1", "B"], next: q_add_0, write: ["0", "1", "1"], move: ["L", "L", "L"]}
+  - {state: q_add_0, read: ["1", "0", "B"], next: q_add_0, write: ["1", "0", "1"], move: ["L", "L", "L"]}
+  - {state: q_add_0, read: ["1", "1", "B"], next: q_add_1, write: ["1", "1", "0"], move: ["L", "L", "L"]} # 1+1 = 0, Elde var 1
+  # Sayılardan biri bitmiş, diğeri devam ediyorsa
+  - {state: q_add_0, read: ["0", "B", "B"], next: q_add_0, write: ["0", "B", "0"], move: ["L", "S", "L"]}
+  - {state: q_add_0, read: ["1", "B", "B"], next: q_add_0, write: ["1", "B", "1"], move: ["L", "S", "L"]}
+  - {state: q_add_0, read: ["B", "0", "B"], next: q_add_0, write: ["B", "0", "0"], move: ["S", "L", "L"]}
+  - {state: q_add_0, read: ["B", "1", "B"], next: q_add_0, write: ["B", "1", "1"], move: ["S", "L", "L"]}
+  # İkisi de bittiyse işlemi kabul et
+  - {state: q_add_0, read: ["B", "B", "B"], next: q_accept, write: ["B", "B", "B"], move: ["S", "S", "S"]}
+
+  # Aşama 3: Toplama - ELDE VAR 1 (q_add_1)
+  - {state: q_add_1, read: ["0", "0", "B"], next: q_add_0, write: ["0", "0", "1"], move: ["L", "L", "L"]} # 0+0+1 = 1, Elde yok
+  - {state: q_add_1, read: ["0", "1", "B"], next: q_add_1, write: ["0", "1", "0"], move: ["L", "L", "L"]} # 0+1+1 = 0, Elde var 1
+  - {state: q_add_1, read: ["1", "0", "B"], next: q_add_1, write: ["1", "0", "0"], move: ["L", "L", "L"]}
+  - {state: q_add_1, read: ["1", "1", "B"], next: q_add_1, write: ["1", "1", "1"], move: ["L", "L", "L"]} # 1+1+1 = 1, Elde var 1
+  # Sayılardan biri bittiyse (elde hala 1 var)
+  - {state: q_add_1, read: ["0", "B", "B"], next: q_add_0, write: ["0", "B", "1"], move: ["L", "S", "L"]}
+  - {state: q_add_1, read: ["1", "B", "B"], next: q_add_1, write: ["1", "B", "0"], move: ["L", "S", "L"]}
+  - {state: q_add_1, read: ["B", "0", "B"], next: q_add_0, write: ["B", "0", "1"], move: ["S", "L", "L"]}
+  - {state: q_add_1, read: ["B", "1", "B"], next: q_add_1, write: ["B", "1", "0"], move: ["S", "L", "L"]}
+  # İki sayı da bitti ama hala elde 1 varsa, o 1'i de şeride yaz
+  - {state: q_add_1, read: ["B", "B", "B"], next: q_accept, write: ["B", "B", "1"], move: ["S", "S", "S"]}
